@@ -9,6 +9,7 @@ from flask_mongoengine import MongoEngine
 from flask_redis import FlaskRedis
 from flask_mail import Mail,Message
 import secrets
+from loguru import logger
 
 
 pymysql.install_as_MySQLdb()
@@ -41,7 +42,7 @@ def create_app(test_config=None):
 
     # for item in app.config:
     #     print(str(item)+':'+str(app.config[item]))
-    # logger.add("./logs/mongo_link.log")
+    logger.add("./logs/mongo_link.log")
     mongo.init_app(app)
     db.init_app(app)
     # rds.init_app(app)

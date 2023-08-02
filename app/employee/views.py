@@ -100,6 +100,29 @@ def add_emp():
 '''
 
 
+@bp.route('/regist', methods=['POST'])
+def regist():
+    data = request.get_json()
+    input_keys = []
+    for keys in request.get_json().keys():
+        input_keys.append(keys)
+    if input_keys != ['name', 'password', 'mail']:
+        return jsonify(JsonResponse.error(msg="请校验body体中的输入键"))
+    employee = EmployeeModel.query.filter(EmployeeModel.name == data['name']).first()
+    if employee is not None:
+        return jsonify(JsonResponse.error(msg="用户名已存在"))
+    mail = EmployeeModel.query.filter(EmployeeModel.mail == data['mail']).first()
+    if mail is not None:
+        return jsonify(JsonResponse.error(msg="号码已经使用"))
+    else:
+        emp = EmployeeModel(name=data['name'], pswd=data['password'], mail=data['mail'])
+        db.session.add(emp)
+        db.session.commit()
+        employee = EmployeeModel.query.filter(EmployeeModel.name == data['name']).first()
+        del (employee.__dict__)['_sa_instance_state']
+        return jsonify(JsonResponse.success(msg="注册成功", data=(employee.__dict__['create_time'])))
+
+
 @bp.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
@@ -131,30 +154,8 @@ def login():
             session['emp_id'] = (employee.__dict__)['id']
             print(session)
             del (employee.__dict__)['id']
-            return jsonify(JsonResponse.success(msg=f"登录成功,sessionid is {session.get('emp_id')}", data=(employee.__dict__)))
-
-
-@bp.route('/regist', methods=['POST'])
-def regist():
-    data = request.get_json()
-    input_keys = []
-    for keys in request.get_json().keys():
-        input_keys.append(keys)
-    if input_keys != ['name', 'password', 'mail']:
-        return jsonify(JsonResponse.error(msg="请校验body体中的输入键"))
-    employee = EmployeeModel.query.filter(EmployeeModel.name == data['name']).first()
-    if employee is not None:
-        return jsonify(JsonResponse.error(msg="用户名已存在"))
-    mail = EmployeeModel.query.filter(EmployeeModel.mail == data['mail']).first()
-    if mail is not None:
-        return jsonify(JsonResponse.error(msg="号码已经使用"))
-    else:
-        emp = EmployeeModel(name=data['name'], pswd=data['password'], mail=data['mail'])
-        db.session.add(emp)
-        db.session.commit()
-        employee = EmployeeModel.query.filter(EmployeeModel.name == data['name']).first()
-        del (employee.__dict__)['_sa_instance_state']
-        return jsonify(JsonResponse.success(msg="注册成功", data=(employee.__dict__['create_time'])))
+            return jsonify(
+                JsonResponse.success(msg=f"登录成功,sessionid is {session.get('emp_id')}", data=(employee.__dict__)))
 
 
 @bp.route("/list")
@@ -194,13 +195,13 @@ def send_code():
     # code = [str(randint(0, 9)) for i in range(6)]
     code = ''.join(code_list)
     emp_name = request.get_json()['name']
-    #获取员工的信息，如果不为空，redis存入缓存，且发送验证码
+    # 获取员工的信息，如果不为空，redis存入缓存，且发送验证码
     emp = EmployeeModel.query.filter(EmployeeModel.name == emp_name).first()
     if emp is not None:
         try:
             fds.set(emp_name, code)
             fds.expire(emp_name, 3600)
-            emp_mail=(emp.__dict__)['mail']
+            emp_mail = (emp.__dict__)['mail']
             msg = Message('flask验证码测试', sender='alphonse9317@163.com', recipients=[emp_mail])
             msg.body = code
             mail.send(msg)
@@ -209,4 +210,3 @@ def send_code():
             return jsonify(JsonResponse.success(msg='异常情况，发送验证码可能失败'))
     else:
         return jsonify(JsonResponse.error(msg='员工不存在'))
-
