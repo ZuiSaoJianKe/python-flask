@@ -8,6 +8,7 @@ from flask_mongoengine import MongoEngine
 from flask_redis import FlaskRedis
 from flask_mail import Mail,Message
 import secrets
+from loguru import logger
 
 
 

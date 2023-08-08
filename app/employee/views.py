@@ -139,7 +139,7 @@ def login():
     elif data['password'] != EmployeeModel.query.filter(EmployeeModel.name.like(data['name'])).all()[0].pswd:
         return jsonify(JsonResponse.error(msg="密码错误"))
     check_code = fds.get(data['name'])
-    print(check_code)
+    # print(check_code)
     if check_code is None:
         return jsonify(JsonResponse.error(msg="登陆失败，验证码已失效，请重新发送验证码"))
     else:
@@ -152,11 +152,15 @@ def login():
             del (employee.__dict__)['update_time']
             del (employee.__dict__)['pswd']
             session['emp_id'] = (employee.__dict__)['id']
-            print(session)
+            print(f'登陆接口获得session为{session}')
             del (employee.__dict__)['id']
-            return jsonify(
-                JsonResponse.success(msg=f"登录成功,sessionid is {session.get('emp_id')}", data=(employee.__dict__)))
+            return jsonify(JsonResponse.success(msg=f"登录成功,sessionid is {session.get('emp_id')}", data=(employee.__dict__)))
 
+@bp.route('/logout',methods=['POST'])
+def logout():
+    session.clear()
+    print(f"logout的方法session为{session}")
+    return jsonify(JsonResponse.success(msg="退出登陆成功"))
 
 @bp.route("/list")
 def get_list():
@@ -210,3 +214,4 @@ def send_code():
             return jsonify(JsonResponse.success(msg='异常情况，发送验证码可能失败'))
     else:
         return jsonify(JsonResponse.error(msg='员工不存在'))
+
